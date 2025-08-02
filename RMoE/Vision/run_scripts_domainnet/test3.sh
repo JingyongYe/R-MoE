@@ -1,0 +1,1 @@
+python3 -m domainbed.scripts.collect_results --input_dir=/mnt/yjy/project/DILMoE/EMoE/Vision/outputs-ours-adapt-8/DomainNet/[0]/GMOE

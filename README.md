@@ -1,105 +1,88 @@
-<h2 align="center"> <a href="https://arxiv.org/abs/2405.14297">Dynamic Mixture of Experts: An Auto-Tuning Approach for Efficient Transformer Models</a></h2>
-<h5 align="center"> If our project helps you, please give us a star ⭐ and cite our <a href="#citation">paper</a>!</h2>
-<h5 align="center">
+# R-MoE: Voting for Stability: A Social Choice Framework for Regulated Mixture-of-Experts
 
-[![hf_space](https://img.shields.io/badge/🤗-Paper%20In%20HF-red.svg)](https://huggingface.co/papers/2405.14297)
-[![arxiv](https://img.shields.io/badge/Arxiv-2405.14297-b31b1b.svg?logo=arXiv)](https://arxiv.org/abs/2405.14297)
-[![visitor](https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2FLINs-lab%2FDynMoE&count_bg=%2379C83D&title_bg=%23454343&icon=&icon_color=%23E7E7E7&title=visitor&edge_flat=false)](https://hits.seeyoufarm.com)
+This repository contains the official implementation for the paper "Voting for Stability: A Social Choice Framework for Regulated Mixture-of-Experts".
 
-## News
-- **[2025.01.23]**: 🎉 Our paper is accepted to ICLR 2025!
-- **[2024.05.25]** Our [checkpoints](https://huggingface.co/collections/LINs-lab/dynmoe-family-665ed5a331a7e84463cab01a) are available now!
-- **[2024.05.23]** Our [paper](https://arxiv.org/abs/2405.14297) is released!
+For peer review, the code is available at: [https://anonymous.4open.science/r/R-MoE-E3DC](https://anonymous.4open.science/r/R-MoE-E3DC)
 
-## Why Do We Need DynMoE?
+## Abstract
 
-Sparse MoE (SMoE) has an unavoidable drawback: *the performance of SMoE heavily relies on the choice of hyper-parameters, such as the number of activated experts per token (top-k) and the number of experts.*
-
-Also, *identifying the optimal hyper-parameter without a sufficient number of ablation studies is challenging.* As the size of the models continues to grow, this limitation could result in a significant waste of computational resources, and in turn, could hinder the efficiency of training MoE-based models in practice.
-
-Now, our **DynMoE** addresses these challenges through the two components introduced in [Dynamic Mixture of Experts (DynMoE)](#dynamic-mixture-of-experts-dynmoe).
-
-## Dynamic Mixture of Experts (DynMoE)
-
-## Top-Any Gating
-
-![hh](./assets/moe-overview.gif)
-
-We first introduce a novel gating method that enables each token to **automatically determine the number of experts to activate**.
-
-## Adaptive Training Process
-
-![adaptive-training](https://cdn.jsdelivr.net/gh/QAQdev/Pics@master/uPic/adaptive.png)
-
-Our method also includes an adaptive process **automatically adjusts the number of experts** during training.
-
-## Can We Trust DynMoE? Yes!
-
-- On language tasks, **DynMoE surpasses the average performance among various MoE settings.**
-- **Effectiveness of DynMoE remains consistent** in both Vision and Vision-Language tasks.
-- Although sparsity is not enforced in DynMoE, it **maintains efficiency by activating even less parameters!**
-
-## Model Zoo
-
-| Model | Activated Params / Total Params| Transformers(HF) |
-| ----- | --------------- | ---------------- |
-| DynMoE-StableLM-1.6B | 1.8B / 2.9B | [LINs-lab/DynMoE-StableLM-1.6B](https://huggingface.co/LINs-lab/DynMoE-StableLM-1.6B)
-| DynMoE-Qwen-1.8B | 2.2B / 3.1B | [LINs-lab/DynMoE-Qwen-1.8B](https://huggingface.co/LINs-lab/DynMoE-Qwen-1.8B)
-| DynMoE-Phi-2-2.7B | 3.4B / 5.3B| [LINs-lab/DynMoE-Phi-2-2.7B](https://huggingface.co/LINs-lab/DynMoE-Phi-2-2.7B)
-
-##  Directory Specification
-
-### Experiment Code
-
-- `EMoE/` contains experiments on language and vision tasks, which uses tutel-based DynMoE.
-- `MoE-LLaVA/` contains experiments on language-vision tasks, which uses deepspeed-0.9.5-based DynMoE.
-
-### DynMoE Implementations
-
-- `Deepspeed/` provides DynMoE-Deepspeed implementation. **(Recommend)**
-- `EMoE/tutel/` provides DynMoE-Tutel implementation.
+Mixture-of-Experts (MoE) training is notoriously difficult, caught between fostering expert specialization and ensuring balanced computation. We introduce a novel perspective, Regulated MoE (RMoE), that recasts this problem through the lens of multi-agent systems. Our primary contribution is the concept of expert committee stability, where we argue that common failure modes like routing collapse are symptoms of a fundamentally unstable routing policy. We then present two synergistic mechanisms, a **Phased Curriculum** for the load-balancing loss and **Stateful Fusion** for the expert weighting, as a practical and principled means to achieve this stability. Extensive experiments on the GLUE and DomainBed benchmarks show that RMoE significantly outperforms standard MoE and dynamic routing baselines.
 
 ## Environment Setup
 
-Please refer to instructions under `EMoE/` and `MoE-LLaVA/`.
+1.  **Install PyTorch:**
+    ```bash
+    pip3 install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu116
+    ```
 
-## Usage
+2.  **Install Custom Tutel Module:**
+    Our implementation uses a modified version of the Tutel library. Please install it from the local directory.
+    ```bash
+    cd RMoE/tutel
+    pip3 install ./
+    cd ../.. 
+    ```
 
-### Tutel Examples
+3.  **Install Dependencies:**
+    Install the necessary packages for the language and vision tasks.
+    ```bash
+    pip3 install -r RMoE/Language/requirements.txt
+    pip3 install -r RMoE/Vision/requirements.txt
+    ```
 
-Please refer to `EMoE/Language/README.md` and `EMoE/Language/Vision.md`.
+4.  **Download Vision Datasets:**
+    For vision experiments, download the datasets using the provided script.
+    ```bash
+    python3 RMoE/Vision/domainbed/scripts/download --data_dir=./RMoE/Vision/domainbed/data
+    ```
 
-### DeepSpeed Examples (Recommend)
+## Reproducing Results
 
-We give a minimal example to train DynMoE-ViT on ImageNet-1K from scratch at `Examples/DeepSpeed-MoE`.
+We provide scripts to reproduce the results reported in the paper for both GLUE and DomainBed benchmarks.
 
-- Check `Examples/DeepSpeed-MoE/dynmoe_vit.py` for how to use DynMoE in model implementation.
-- Check `Examples/DeepSpeed-MoE/train.py` for how to train model with DynMoE.
+### GLUE Benchmark (Language)
 
-## Acknowledgement
+The training scripts for language tasks are located in `RMoE/Language/scripts/train/`. You can run them to reproduce the results. For example:
 
-We are grateful for the following awesome projects:
+-   **CoLA:** `bash RMoE/Language/scripts/train/cola_dw.sh`
+-   **MNLI:** `bash RMoE/Language/scripts/train/mnli_dw.sh`
+-   **MRPC:** `bash RMoE/Language/scripts/train/mrpc_dw.sh`
+-   **QNLI:** `bash RMoE/Language/scripts/train/qnli_dw.sh`
+-   **RTE:** `bash RMoE/Language/scripts/train/rte_dw.sh`
 
-- [tutel](https://github.com/microsoft/tutel)
-- [DeepSpeed](https://github.com/microsoft/DeepSpeed)
-- [GMoE](https://github.com/Luodian/Generalizable-Mixture-of-Experts)
-- [EMoE](https://github.com/qiuzh20/EMoE)
-- [MoE-LLaVA](https://github.com/PKU-YuanGroup/MoE-LLaVA)
-- [GLUE-X](https://github.com/YangLinyi/GLUE-X)
+### DomainBed Benchmark (Vision)
 
-## Citation
+The training scripts for vision tasks are located in `RMoE/Vision/`. You can run them to reproduce the results. For example:
 
-If you find this project helpful, please consider citing our work:
+-   **PACS:** `bash RMoE/Vision/run_scripts/pacs_dw.sh`
+-   **VLCS:** `bash RMoE/Vision/run_scripts_vlcs/vlcs_dw.sh`
+-   **OfficeHome:** `bash RMoE/Vision/run_scripts_office_home/office_home_dw.sh`
+-   **DomainNet:** `bash RMoE/Vision/run_scripts_domainnet/domainnet_dw.sh`
 
-```bibtex
-@article{guo2024dynamic,
-  title={Dynamic Mixture of Experts: An Auto-Tuning Approach for Efficient Transformer Models},
-  author={Guo, Yongxin and Cheng, Zhenglin and Tang, Xiaoying and Lin, Tao},
-  journal={arXiv preprint arXiv:2405.14297},
-  year={2024}
-}
+After training, you can collect the results by running:
+```bash
+python3 -m RMoE.Vision.domainbed.scripts.collect_results --input_dir=${output_dir}
 ```
+(Replace `${output_dir}` with the actual output directory specified in the training script).
 
-## Star History
+## Main Results
 
-[![Star History Chart](https://api.star-history.com/svg?repos=LINs-lab/DynMoE&type=Date)](https://star-history.com/#LINs-lab/DynMoE&Date)
+### GLUE Benchmark
+
+Performance on the GLUE development set. RMoE shows consistent improvements over strong baselines.
+
+| Model        | COLA           | MRPC           | QNLI           | MNLI           | RTE            |
+|--------------|----------------|----------------|----------------|----------------|----------------|
+| MoE Baseline | 64.30          | 89.94          | 92.49          | 86.61          | 74.07          |
+| DynMoE       | 65.17          | 90.64          | 92.59          | 86.37          | 73.41          |
+| **RMoE (Ours)**  | **66.69**      | **91.55**      | **93.18**      | **88.29**      | **75.45**      |
+
+### Domain Generalization on Vision Tasks
+
+Accuracy on domain generalization benchmarks (PACS, VLCS, OfficeHome, DomainNet).
+
+| Model        | PACS           | VLCS           | OfficeHome     | DomainNet      |
+|--------------|----------------|----------------|----------------|----------------|
+| GMoE         | 88.1           | 80.2           | 74.2           | 48.7           |
+| DynMoE       | 88.4           | 79.4           | 73.6           | 47.4           |
+| **RMoE (Ours)**  | **88.8**       | **81.5**       | **74.5**       | **49.1**       |

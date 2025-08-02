@@ -1,0 +1,11 @@
+python==3.11
+gdown
+numpy
+Pillow
+prettytable
+sconf
+tensorboardX
+k_means_constrained
+timm
+wandb
+wilds
