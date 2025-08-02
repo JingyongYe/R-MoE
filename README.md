@@ -95,5 +95,4 @@ Our work builds upon several amazing projects. We would like to thank the author
 - [DeepSpeed](https://github.com/microsoft/DeepSpeed)
 - [GMoE](https://github.com/Luodian/Generalizable-Mixture-of-Experts)
 - [EMoE](https://github.com/qiuzh20/EMoE)
-- [MoE-LLaVA](https://github.com/PKU-YuanGroup/MoE-LLaVA)
 - [GLUE-X](https://github.com/YangLinyi/GLUE-X)
