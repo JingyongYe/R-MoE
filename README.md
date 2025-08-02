@@ -86,3 +86,14 @@ Accuracy on domain generalization benchmarks (PACS, VLCS, OfficeHome, DomainNet)
 | GMoE         | 88.1           | 80.2           | 74.2           | 48.7           |
 | DynMoE       | 88.4           | 79.4           | 73.6           | 47.4           |
 | **RMoE (Ours)**  | **88.8**       | **81.5**       | **74.5**       | **49.1**       |
+
+## Acknowledgement
+
+Our work builds upon several amazing projects. We would like to thank the authors of:
+- [DynMoE](https://github.com/LINs-lab/DynMoE)
+- [tutel](https://github.com/microsoft/tutel)
+- [DeepSpeed](https://github.com/microsoft/DeepSpeed)
+- [GMoE](https://github.com/Luodian/Generalizable-Mixture-of-Experts)
+- [EMoE](https://github.com/qiuzh20/EMoE)
+- [MoE-LLaVA](https://github.com/PKU-YuanGroup/MoE-LLaVA)
+- [GLUE-X](https://github.com/YangLinyi/GLUE-X)
