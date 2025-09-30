@@ -1,6 +1,6 @@
-# R-MoE: Voting for Stability: A Social Choice Framework for Regulated Mixture-of-Experts
+# On Training Mixture-of-Experts: A Social Choice Perspective
 
-This repository contains the official implementation for the paper "Voting for Stability: A Social Choice Framework for Regulated Mixture-of-Experts".
+This repository contains the official implementation for the paper "On Training Mixture-of-Experts: A Social Choice Perspective".
 
 For peer review, the code is available at: [https://anonymous.4open.science/r/R-MoE-E3DC](https://anonymous.4open.science/r/R-MoE-E3DC)
 
