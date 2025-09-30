@@ -220,8 +220,8 @@ class MOELayer(torch.nn.Module):
         self.dw = dw
         if self.dw:
             self.dw_momentum = dw_momentum
-            # Initialize buffer for max possible experts to handle adaptive changes
-            self.register_buffer('fusion_weights', torch.ones(self.max_num_global_experts) / self.max_num_global_experts)
+            # Initialize EMA buffer for temporal smoothing of expert activations
+            self.register_buffer('ema_scores', torch.zeros(self.max_num_global_experts))
 
         experts_type = experts.pop('type')
         if experts_type == 'custom':
@@ -386,8 +386,6 @@ class MOELayer(torch.nn.Module):
                 scores = logits_w_noise
             else:
                 scores = F.softmax(logits_w_noise, dim=1)
-
-
             if self.is_gshard_loss:
                 _loss_fn = lambda gates, topk_ids: losses.gshard_loss(gates, topk_ids, self.num_global_experts)
             elif gctx.enable_softmax_logits:
@@ -417,9 +415,6 @@ class MOELayer(torch.nn.Module):
         else:
             logits_dtype, scores, (crit, l_aux) = routing(top_k)
 
-        if self.training and self.dw:
-            self._update_fusion_weights(scores)
-
         if self.dw:
             # 1. 解包路由结果。topk_indices 是一个张量列表。
             dispatch_info, topk_indices, locations, original_gates_s, expert_counts = crit
@@ -428,20 +423,32 @@ class MOELayer(torch.nn.Module):
             stacked_indices = torch.stack(topk_indices, dim=1)
 
             # 3. 安全钳位：防止因专家数量动态变化导致的索引越界。
-            clamped_stacked_indices = stacked_indices.clamp(max=self.num_global_experts - 1)
+            clamped_stacked_indices = stacked_indices.clamp(max=self.max_num_global_experts - 1)
 
-            # 4. 获取当前激活专家的融合权重。
-            fusion_scores = F.softmax(self.fusion_weights[:self.num_global_experts], dim=0)
+            # 4. 计算当前batch的专家激活总和 (论文中的 s_sum(t))
+            expert_activations_sum = scores.sum(dim=0)  # Sum across batch dimension
 
-            # 5. 使用钳位后的索引提取融合分数，作为新的门控权重。
-            new_gates_tensor = fusion_scores[clamped_stacked_indices]
+            # 5. 更新EMA (论文中的 m(t) = β * m(t-1) + (1-β) * s_sum(t))
+            ema_scores_slice = self.ema_scores[:self.max_num_global_experts]
+            with torch.no_grad():
+                ema_scores_slice.mul_(self.dw_momentum).add_((1 - self.dw_momentum) * expert_activations_sum.detach())
+
+            # 6. 应用数值稳定性处理 (论文中的 log(1 + m_ε(t)))
+            epsilon = 1e-6
+            stabilized_scores = torch.log1p(ema_scores_slice + epsilon)
+
+            # 7. 计算融合权重 (论文中的 softmax(log(1 + m_ε(t))))
+            fusion_weights = F.softmax(stabilized_scores, dim=0)
+
+            # 8. 使用钳位后的索引提取融合权重，作为新的门控权重。
+            new_gates_tensor = fusion_weights[clamped_stacked_indices]
             new_gates_tensor = F.normalize(new_gates_tensor, p=1, dim=1)
 
-            # 6. 将计算出的新权重和钳位后的索引转换回 `crit` 所期望的列表格式。
+            # 9. 将计算出的新权重和钳位后的索引转换回 `crit` 所期望的列表格式。
             new_gates_s_list = [g.squeeze(1) for g in new_gates_tensor.split(1, dim=1)]
             new_indices_s_list = [idx.squeeze(1) for idx in clamped_stacked_indices.split(1, dim=1)]
 
-            # 7. 使用新的门控权重和安全的索引重新组装 `crit` 元组。
+            # 10. 使用新的门控权重和安全的索引重新组装 `crit` 元组。
             crit = (dispatch_info, new_indices_s_list, locations, new_gates_s_list, expert_counts)
 
         y = fast_encode(x.to(logits_dtype), crit, self.is_postscore).to(x.dtype)
@@ -531,28 +538,7 @@ class MOELayer(torch.nn.Module):
                     value_norm
                 self.gates[0].wg.weight.data.copy_(weighted_keys)
 
-    @torch.no_grad()
-    def _update_fusion_weights(self, scores):
-        """
-        Updates fusion weights using momentum, safely handling adaptive expert counts.
-        """
-        num_active_experts = self.num_global_experts
-        if num_active_experts == 0:
-            return
 
-        # Calculate mean activation for each expert across the batch
-        expert_activations = scores.mean(dim=0)
-
-        # Ensure expert_activations has the correct size
-        if expert_activations.size(0) != num_active_experts:
-            # This case should not happen if scores are from the current gate
-            return
-
-        # Slice the fusion_weights buffer to match the number of active experts
-        fusion_weights_slice = self.fusion_weights[:num_active_experts]
-
-        # Apply momentum update
-        fusion_weights_slice.mul_(self.dw_momentum).add_((1 - self.dw_momentum) * expert_activations)
 
 
 moe_layer = MOELayer
